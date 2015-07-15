@@ -2,10 +2,9 @@
 ## Installation
 Clone to your machine then hit this :
 
-	npm install
+	node server.js
 
 ## Configuration (database)
-app.js
 
         host: 'localhost',
         user: 'root',
