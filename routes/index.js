@@ -1,5 +1,6 @@
 var express = require('express');
 var moment = require('moment');
+var shortid = require('shortid');
 var router = express.Router();
 
 /* GET home page. */
@@ -7,7 +8,7 @@ var router = express.Router();
 //   res.render('index', { title: 'Express' });
 // });
 
-router.get('/api',function(req,res){
+router.get('/',function(req,res){
     res.send('<center><h3>Welcome to BillMe API</h3></center>');
 });
 
@@ -18,35 +19,61 @@ router.get('/about',function(req,res){
 /*RESTful API Router*/
 
 //all users
-var users = router.route('/api/users');
+var users = router.route('/users');
 
 // users.all(function(req,res,next){
-//     console.log("You need to smth about Route ? Do it here");
-//     console.log(req.params);
-//     next();
+//     //console.log("You need to smth about Route ? Do it here");
+//     //console.log(req.params);
+
+//     console.log(req.headers.authentification);
+
+//     //validation
+//     req.check('authentification','Auth is required').notEmpty();
+
+//     var errors = req.validationErrors();
+//     if(errors){
+//         res.status(422).json(errors);
+//         return;
+//     } else{
+//     	next();
+//     }
+    
 // });
 
 users.get(function(req,res,next){
 
 
-    req.getConnection(function(err,conn){
+	console.log(req.headers.authentification);
 
-        if (err) return next("Cannot Connect");
-
-        var query = conn.query('SELECT user_id as id, user_firstname as first_name, user_lastname as last_name, user_image as ava_url  FROM users',function(err,rows){
-
-            if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-            }
-
-            // res.render('user',{title:"User Data",data:rows});
-            res.json({"Error" : false, "Message" : "Success", "Users" : rows});
+	var auth = req.headers.authentification;
 
 
-         });
+	if (auth != "" && auth != undefined) {
+		req.getConnection(function(err,conn){
 
-    });
+	        if (err) return next("Cannot Connect");
+
+	        var query = conn.query('SELECT user_id, user_firstname as first_name, user_lastname as last_name, user_image as ava_url FROM users WHERE user_access_token = ? ',[auth],function(err,rows){
+
+	            if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	            }
+
+	            if(rows.length < 1){
+	            	return res.send("User Not found")
+	            } else {
+
+			        res.json({"Error" : false, "Message" : "Success", "User" : rows});
+
+	            }
+
+	         });
+
+	    });
+	} else {
+		res.json({"Error" : true, "Message" : "Auth is required"});
+	}
 
 });
 
@@ -60,9 +87,6 @@ users.post(function(req,res,next){
     req.assert('last_name','Last Name is required').notEmpty();
     req.assert('facebook_id','Facebook ID is required').notEmpty();
     req.assert('email','A valid email is required').isEmail();
-    // req.assert('password','Enter a password 6 - 20').len(6,20);
-
-    console.log(req.body);
 
     var errors = req.validationErrors();
     if(errors){
@@ -102,7 +126,7 @@ users.post(function(req,res,next){
 });
 
 //single user
-var user = router.route('/api/users/:user_id');
+var user = router.route('/users/:user_id');
 
 // user.all(function(req,res,next){
 //     console.log("You need to smth about user Route ? Do it here");
@@ -205,9 +229,76 @@ user.delete(function(req,res,next){
      });
 });
 
+var facebookLogin = router.route('/login/facebook');
+
+//post data to DB | POST
+facebookLogin.post(function(req,res,next){
+
+	var now = moment.utc().format('YYYY-MM-DD HH:mm:ss');
+
+    //validation
+    req.assert('first_name','First Name is required').notEmpty();
+    req.assert('last_name','Last Name is required').notEmpty();
+    req.assert('facebook_id','Facebook ID is required').notEmpty();
+    req.assert('email','A valid email is required').isEmail();
+
+    var errors = req.validationErrors();
+    if(errors){
+        res.status(422).json(errors);
+        return;
+    }
+
+    var access_token = shortid.generate();
+
+    //get data
+    var data = {
+        user_firstname:req.body.first_name,
+        user_lastname:req.body.last_name,
+        user_fbid:req.body.facebook_id,
+        user_created_date:now,
+        user_updated_date:now,
+        user_last_update:now,
+        user_email:req.body.email,
+        user_access_token:access_token,
+     };
+
+    //inserting into mysql
+    req.getConnection(function (err, conn){
+
+        if (err) return next("Cannot Connect");
+
+        var query = conn.query("INSERT INTO users set ? ",data, function(err, rows){
+
+           if(err){
+                console.log(err);
+                return next("Mysql error, check your query");
+           } else {
+
+           		// res.sendStatus(200);
+           		var query = conn.query('SELECT user_id, user_access_token as auth FROM users WHERE user_access_token = ?',[access_token],function(err,rows){
+
+	            if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	            }
+
+	            //if user not found
+            	if(rows.length < 1)
+                	return res.send("User Not found");
+
+	            res.json({"Error" : false, "Message" : "Success", "Chats" : rows});
+
+	         });
+           }   
+
+        });
+
+     });
+
+});
 
 //all chats
-var chats = router.route('/api/chats');
+var chats = router.route('/chats');
 
 // users.all(function(req,res,next){
 //     console.log("You need to smth about Route ? Do it here");
@@ -291,7 +382,7 @@ chats.post(function(req,res,next){
 
 //single chat
 
-var chat = router.route('/api/chats/:friend_user_id');
+var chat = router.route('/chats/:friend_user_id');
 
 // users.all(function(req,res,next){
 //     console.log("You need to smth about Route ? Do it here");
@@ -513,7 +604,7 @@ chat.post(function(req,res,next){
 
 });
 
-var chatcontent = router.route('/api/chats/:friend_user_id/:chat_id');
+var chatcontent = router.route('/chats/:friend_user_id/:chat_id');
 //update chat content
 chatcontent.put(function(req,res,next){
     var friend_user_id = req.params.friend_user_id;
@@ -557,7 +648,7 @@ chatcontent.put(function(req,res,next){
 
 
 
-var balances = router.route('/api/balances/:friend_user_id');
+var balances = router.route('/balances/:friend_user_id');
 
 // users.all(function(req,res,next){
 //     console.log("You need to smth about Route ? Do it here");
@@ -593,7 +684,7 @@ balances.get(function(req,res,next){
 
 });
 
-var balanceshare = router.route('/api/balances/share');
+var balanceshare = router.route('/balances/share');
 
 // users.all(function(req,res,next){
 //     console.log("You need to smth about Route ? Do it here");
