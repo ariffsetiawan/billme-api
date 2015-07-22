@@ -249,6 +249,7 @@ facebookLogin.post(function(req,res,next){
     }
 
     var access_token = shortid.generate();
+    var facebook_id = req.body.facebook_id;
 
     //get data
     var data = {
@@ -262,38 +263,59 @@ facebookLogin.post(function(req,res,next){
         user_access_token:access_token,
      };
 
-    //inserting into mysql
     req.getConnection(function (err, conn){
 
-        if (err) return next("Cannot Connect");
+		if (err) return next("Cannot Connect");
 
-        var query = conn.query("INSERT INTO users set ? ",data, function(err, rows){
 
-           if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-           } else {
+    	var query = conn.query('SELECT user_fbid FROM users WHERE user_fbid = ?',[facebook_id],function(err,rows){
 
-           		// res.sendStatus(200);
-           		var query = conn.query('SELECT user_id, user_access_token as auth FROM users WHERE user_access_token = ?',[access_token],function(err,rows){
+		    if(err){
+		        console.log(err);
+		        return next("Mysql error, check your query");
+		    }
 
-	            if(err){
-	                console.log(err);
-	                return next("Mysql error, check your query");
-	            }
+		    //if user not found
+			if(rows.length < 1) {
 
-	            //if user not found
-            	if(rows.length < 1)
-                	return res.send("User Not found");
+			    //inserting into mysql
+			    
 
-	            res.json({"Error" : false, "Message" : "Success", "Chats" : rows});
+			        var query = conn.query("INSERT INTO users set ? ",data, function(err, rows){
 
-	         });
-           }   
+			           if(err){
+			                console.log(err);
+			                return next("Mysql error, check your query");
+			           } else {
 
-        });
+			           		// res.sendStatus(200);
+			           		var query = conn.query('SELECT user_id, user_access_token as auth FROM users WHERE user_access_token = ?',[access_token],function(err,rows){
 
-     });
+				            if(err){
+				                console.log(err);
+				                return next("Mysql error, check your query");
+				            }
+
+				            //if user not found
+			            	if(rows.length < 1)
+			                	return res.send("User Not found");
+
+				            res.json({"Error" : false, "Message" : "Success", "User" : rows});
+
+				         });
+			           }   
+
+			        });
+
+			     	
+			} else {
+				res.json({"Error" : true, "Message" : "User already exist", "User" : rows});
+			}
+
+		});
+	});
+    	
+
 
 });
 

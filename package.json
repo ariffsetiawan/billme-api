@@ -11,6 +11,7 @@
     "express-myconnection": "*",
     "express-validator": "^2.6.0",
     "moment": "^2.10.3",
-    "mysql": "*"
+    "mysql": "*",
+    "shortid": "^2.2.2"
   }
 }

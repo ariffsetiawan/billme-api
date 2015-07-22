@@ -16,14 +16,14 @@ import billme.sql
 
 ##API Router
 
-User
-type : GET
-url : /users
-header : authentification
-params : -
+	User
+		type : GET
+		url : /users
+		header : authentification
+		params : -
 
-Login
-type : POST
-url : /login/facebook
-header : -
-params : facebook_id, first_name, last_name, email
+	Login
+		type : POST
+		url : /login/facebook
+		header : -
+		params : facebook_id, first_name, last_name, email
