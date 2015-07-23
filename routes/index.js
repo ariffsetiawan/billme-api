@@ -328,79 +328,76 @@ var chats = router.route('/chats');
 //     next();
 // });
 
+// chats.get(function(req,res,next){
+
+
+//     req.getConnection(function(err,conn){
+
+//         if (err) return next("Cannot Connect");
+
+//         var query = conn.query('SELECT * FROM chats ORDER BY chat_updated_date DESC',function(err,rows){
+
+//             if(err){
+//                 console.log(err);
+//                 return next("Mysql error, check your query");
+//             }
+
+//             // res.render('user',{title:"User Data",data:rows});
+//             res.json({"Error" : false, "Message" : "Success", "Chats" : rows});
+
+
+//          });
+
+//     });
+
+// });
+
 chats.get(function(req,res,next){
 
+	var auth = req.headers.authentification;
+	var user_id = "";
 
-    req.getConnection(function(err,conn){
+	if (auth != "" && auth != undefined) {
+		req.getConnection(function(err,conn){
 
-        if (err) return next("Cannot Connect");
+	        if (err) return next("Cannot Connect");
 
-        var query = conn.query('SELECT * FROM chats ORDER BY chat_updated_date DESC',function(err,rows){
+	        var query = conn.query('SELECT user_id FROM users WHERE user_access_token = ? ',[auth],function(err,rows){
 
-            if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-            }
+	            if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	            }
 
-            // res.render('user',{title:"User Data",data:rows});
-            res.json({"Error" : false, "Message" : "Success", "Chats" : rows});
+	            if(rows.length < 1){
+	            	return res.send("User Not found")
+	            } else {
 
 
-         });
+	            	user_id = rows[0].user_id;
 
-    });
+			        var query = conn.query("SELECT * FROM chats WHERE (chat_user_1 = "+user_id+" OR chat_user_2="+user_id+" ) ORDER BY chat_updated_date DESC",function(err,rows){
 
-});
+			            if(err){
+			                console.log(err);
+			                return next("Mysql error, check your query");
+			            }
 
-//post data to DB | POST
-chats.post(function(req,res,next){
+			            res.json({"Error" : false, "Message" : "Success", "Chats" : rows});
 
-	var now = moment.utc().format('YYYY-MM-DD HH:mm:ss');
-	// console.log(now);
 
-    //validation
-    req.assert('user_1','user 1 is required').notEmpty();
-    req.assert('user_2','user 2 is required').notEmpty();
+			         });
 
-    // console.log(req.body);
+	            }
 
-    var errors = req.validationErrors();
-    if(errors){
-        res.status(422).json(errors);
-        return;
-    }
+	         });
 
-    //get data
-    var data = {
-        chat_user_1:req.body.user_1,
-        chat_user_2:req.body.user_2,
-        chat_url:req.body.user_1+"/"+req.body.user_2,
-        chat_created_date:now,
-        chat_updated_date:now,
-        chat_read_status:0,
-        
-     };
-
-    //inserting into mysql
-    req.getConnection(function (err, conn){
-
-        if (err) return next("Cannot Connect");
-
-        var query = conn.query("INSERT INTO chats set ? ",data, function(err, rows){
-
-           if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-           }
-
-          res.sendStatus(200);
-
-        });
-
-     });
+	    });
+	} else {
+		res.json({"Error" : true, "Message" : "Auth is required"});
+	}
 
 });
-
 
 //single chat
 
@@ -446,182 +443,235 @@ chat.post(function(req,res,next){
 
 	var now = moment.utc().format('YYYY-MM-DD HH:mm:ss');
 
+	var auth = req.headers.authentification;
+
 	//validation
-    // req.assert('friend_user_id','user ID is required').notEmpty();
+    req.assert('friend_user_id','user ID is required').notEmpty();
 
-    console.log(req.headers.authentification);
+    var errors = req.validationErrors();
+    if(errors){
+        res.status(422).json(errors);
+        return;
+    }
 
-    // var errors = req.validationErrors();
-    // if(errors){
-    //     res.status(422).json(errors);
-    //     return;
-    // }
     var friend_user_id = req.params.friend_user_id;
     // var friend_user_id = req.body.friend_user_id;
-    var user_id = req.body.user_id;
+    // var user_id = req.body.user_id;
+    var user_id = "";
     var chat_id = "";
 
-	req.getConnection(function(err,conn){
 
-        if (err) return next("Cannot Connect");
+	if (auth != "" && auth != undefined) {
+		req.getConnection(function(err,conn){
 
-        var query = conn.query("SELECT * FROM chats WHERE (chat_user_1 = "+friend_user_id+" AND chat_user_2="+user_id+") OR (chat_user_1 = "+user_id+" AND chat_user_2="+friend_user_id+")",function(err,rows){
+	        if (err) return next("Cannot Connect");
 
-            if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-            }
+	        var query = conn.query('SELECT user_id FROM users WHERE user_access_token = ? ',[auth],function(err,rows){
 
-            //if chat not exist
-            if(rows.length < 1){
-                //return res.send("Contents Not found");
-                //get data
-			    var chat_data = {
-			        chat_user_1:user_id,
-			        chat_user_2:friend_user_id,
-			        chat_url:user_id+"/"+friend_user_id,
-			        chat_created_date:now,
-			        chat_updated_date:now,
-			        chat_read_status:0,
-			        
-			     };
+	            if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	            }
 
-			     var query = conn.query("INSERT INTO chats set ? ",chat_data, function(err, rows){
+	            if(rows.length < 1){
+	            	return res.send("User Not found")
+	            } else {
 
-		           if(err){
-		                console.log(err);
-		                return next("Mysql error, check your query");
-		           }
+			        user_id = rows[0].user_id;
 
-		          //res.sendStatus(200);
+				        var query = conn.query("SELECT * FROM chats WHERE (chat_user_1 = "+friend_user_id+" AND chat_user_2="+user_id+") OR (chat_user_1 = "+user_id+" AND chat_user_2="+friend_user_id+")",function(err,rows){
 
-		          var query = conn.query('SELECT MAX(chat_id) as chat_id FROM chats',function(err,rows){
-
-		            if(err){
-		                console.log(err);
-		                return next("Mysql error, check your query");
-		            }
-
-		            // res.render('user',{title:"User Data",data:rows});
-		            //res.json({"Error" : false, "Message" : "Success", "Chats" : rows});
-
-		            chat_id = rows[0].chat_id;
-
-		            //insert chat contents
-
-		            //get data
-				    var data = {
-				        content_chat_id:chat_id,
-				        content_user_id:user_id,
-				        content_value:req.body.text,
-				        content_date:now,
-				        content_status:1,
-				        
-				     };
-
-				     var chat_update_data = {
-				     	chat_last_content:req.body.text,
-				     	chat_updated_date:now
-				     }
-
-				    //inserting into mysql
-				    req.getConnection(function (err, conn){
-
-				        if (err) return next("Cannot Connect");
-
-				        var query = conn.query("INSERT INTO contents set ? ",data, function(err, rows){
-
-				           if(err){
+				            if(err){
 				                console.log(err);
 				                return next("Mysql error, check your query");
-				           }
+				            }
 
-				          //res.sendStatus(200);
+				            //if chat not exist
+				            if(rows.length < 1){
+				                //return res.send("Contents Not found");
+				                //get data
+							    var chat_data = {
+							        chat_user_1:user_id,
+							        chat_user_2:friend_user_id,
+							        chat_url:user_id+"/"+friend_user_id,
+							        chat_created_date:now,
+							        chat_updated_date:now,
+							        chat_read_status:0,
+							        
+							     };
 
-				          var query = conn.query("UPDATE chats set ? WHERE chat_id = ? ",[chat_update_data,chat_id], function(err, rows){
+							     var query = conn.query("INSERT INTO chats set ? ",chat_data, function(err, rows){
 
-					           if(err){
-					                console.log(err);
-					                return next("Mysql error, check your query");
-					           }
+						           if(err){
+						                console.log(err);
+						                return next("Mysql error, check your query");
+						           }
 
-					          res.sendStatus(200);
+						          //res.sendStatus(200);
 
-					        });
+						          var query = conn.query('SELECT MAX(chat_id) as chat_id FROM chats',function(err,rows){
+
+						            if(err){
+						                console.log(err);
+						                return next("Mysql error, check your query");
+						            }
 
 
+						            chat_id = rows[0].chat_id;
+
+						            //insert chat contents
+
+						            //get data
+								    var data = {
+								        content_chat_id:chat_id,
+								        content_user_id:user_id,
+								        content_value:req.body.text,
+								        content_date:now,
+								        content_status:1,
+								        
+								     };
+
+								     var chat_update_data = {
+								     	chat_last_content:req.body.text,
+								     	chat_updated_date:now
+								     }
+
+								    //inserting into mysql
+								    req.getConnection(function (err, conn){
+
+								        if (err) return next("Cannot Connect");
+
+								        var query = conn.query("INSERT INTO contents set ? ",data, function(err, rows){
+
+								           if(err){
+								                console.log(err);
+								                return next("Mysql error, check your query");
+								           }
+
+								          //res.sendStatus(200);
+
+								          var query = conn.query("UPDATE chats set ? WHERE chat_id = ? ",[chat_update_data,chat_id], function(err, rows){
+
+									           if(err){
+									                console.log(err);
+									                return next("Mysql error, check your query");
+									           }
+
+									          //res.sendStatus(200);
+
+									          var query = conn.query("SELECT * FROM chats WHERE chat_id = ?",[chat_id],function(err,rows){
+
+										            if(err){
+										                console.log(err);
+										                return next("Mysql error, check your query");
+										            }
+
+										            //if user not found
+										            if(rows.length < 1)
+										                return res.send("Contents Not found");
+
+										            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+										        });
+
+									      
+
+									        });
+
+
+								        });
+
+								     });
+
+
+						         });
+
+						        });
+
+
+
+				            } else {
+
+
+					            chat_id = rows[0].chat_id;
+
+					            //insert chat contents
+
+					            //get data
+							    var data = {
+							        content_chat_id:chat_id,
+							        content_user_id:user_id,
+							        content_value:req.body.text,
+							        content_date:now,
+							        content_status:1,
+							        
+							     };
+
+							     var chat_update_data = {
+								     	chat_last_content:req.body.text,
+								     	chat_updated_date:now
+								 }
+
+							    //inserting into mysql
+							    req.getConnection(function (err, conn){
+
+							        if (err) return next("Cannot Connect");
+
+							        var query = conn.query("INSERT INTO contents set ? ",data, function(err, rows){
+
+							           if(err){
+							                console.log(err);
+							                return next("Mysql error, check your query");
+							           }
+
+							          //res.sendStatus(200);
+
+							          var query = conn.query("UPDATE chats set ? WHERE chat_id = ? ",[chat_update_data,chat_id], function(err, rows){
+
+									           if(err){
+									                console.log(err);
+									                return next("Mysql error, check your query");
+									           }
+
+									          // res.sendStatus(200);
+
+									          var query = conn.query("SELECT * FROM chats WHERE chat_id = ?",[chat_id],function(err,rows){
+
+										            if(err){
+										                console.log(err);
+										                return next("Mysql error, check your query");
+										            }
+
+										            //if user not found
+										            if(rows.length < 1)
+										                return res.send("Contents Not found");
+
+										            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+										        });
+
+									        });
+
+							        });
+
+							     });
+
+				            }
+
+				            
 				        });
 
-				     });
+
+	            }
+
+	         });
 
 
-		         });
-
-		        });
 
 
-
-            } else {
-
-            	// res.render('edit',{title:"Edit user",data:rows});
-
-	            //res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
-
-
-	            chat_id = rows[0].chat_id;
-
-	            //insert chat contents
-
-	            //get data
-			    var data = {
-			        content_chat_id:chat_id,
-			        content_user_id:user_id,
-			        content_value:req.body.text,
-			        content_date:now,
-			        content_status:1,
-			        
-			     };
-
-			     var chat_update_data = {
-				     	chat_last_content:req.body.text,
-				     	chat_updated_date:now
-				 }
-
-			    //inserting into mysql
-			    req.getConnection(function (err, conn){
-
-			        if (err) return next("Cannot Connect");
-
-			        var query = conn.query("INSERT INTO contents set ? ",data, function(err, rows){
-
-			           if(err){
-			                console.log(err);
-			                return next("Mysql error, check your query");
-			           }
-
-			          //res.sendStatus(200);
-
-			          var query = conn.query("UPDATE chats set ? WHERE chat_id = ? ",[chat_update_data,chat_id], function(err, rows){
-
-					           if(err){
-					                console.log(err);
-					                return next("Mysql error, check your query");
-					           }
-
-					          res.sendStatus(200);
-
-					        });
-
-			        });
-
-			     });
-
-            }
-
-            
-        });
-
-    });
+	    });
+	 }  else {
+		res.json({"Error" : true, "Message" : "Auth is required"});
+	}
+    
 
 
 });
