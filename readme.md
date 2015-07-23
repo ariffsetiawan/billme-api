@@ -27,3 +27,14 @@ import billme.sql
 		url : /login/facebook
 		header : -
 		params : facebook_id, first_name, last_name, email
+
+	Chat
+		type : GET
+		url : /chats
+		header : authentification
+		params : -
+
+		type : POST
+		url : /chats/{friend_user_id}
+		header : authentification
+		params : text
