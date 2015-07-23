@@ -413,27 +413,53 @@ chat.get(function(req,res,next){
 
     var user_id = req.params.friend_user_id;
 
-    req.getConnection(function(err,conn){
+    var auth = req.headers.authentification;
+	var user_id = "";
 
-        if (err) return next("Cannot Connect");
+	if (auth != "" && auth != undefined) {
+		req.getConnection(function(err,conn){
 
-        var query = conn.query("SELECT * FROM contents LEFT JOIN chats ON contents.content_chat_id=chats.chat_id WHERE (chat_user_1 = "+user_id+" OR chat_user_2="+user_id+" )",function(err,rows){
+	        if (err) return next("Cannot Connect");
 
-            if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-            }
+	        var query = conn.query('SELECT user_id FROM users WHERE user_access_token = ? ',[auth],function(err,rows){
 
-            //if user not found
-            if(rows.length < 1)
-                return res.send("Contents Not found");
+	            if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	            }
 
-            // res.render('edit',{title:"Edit user",data:rows});
+	            if(rows.length < 1){
+	            	return res.send("User Not found")
+	            } else {
 
-            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
-        });
+			        user_id = rows[0].user_id;
 
-    });
+			        var query = conn.query("SELECT * FROM contents LEFT JOIN chats ON contents.content_chat_id=chats.chat_id WHERE (chat_user_1 = "+user_id+" OR chat_user_2="+user_id+" ) ORDER BY content_id",function(err,rows){
+
+			            if(err){
+			                console.log(err);
+			                return next("Mysql error, check your query");
+			            }
+
+			            //if user not found
+			            if(rows.length < 1)
+			                return res.send("Contents Not found");
+
+			            // res.render('edit',{title:"Edit user",data:rows});
+
+			            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+			        });
+     
+
+	            }
+
+	         });
+	    
+	    });
+	
+	} else {
+		res.json({"Error" : true, "Message" : "Auth is required"});
+	}
 
 });
 
@@ -698,23 +724,62 @@ chatcontent.put(function(req,res,next){
         content_status:req.body.action_status,
      };
 
-    //inserting into mysql
-    req.getConnection(function (err, conn){
 
-        if (err) return next("Cannot Connect");
+    var auth = req.headers.authentification;
+	var user_id = "";
 
-        var query = conn.query("UPDATE contents set ? WHERE content_id = ? ",[data,content_id], function(err, rows){
+	if (auth != "" && auth != undefined) {
+		req.getConnection(function(err,conn){
 
-           if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-           }
+	        if (err) return next("Cannot Connect");
 
-          res.sendStatus(200);
+	        var query = conn.query('SELECT user_id FROM users WHERE user_access_token = ? ',[auth],function(err,rows){
 
-        });
+	            if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	            }
 
-     });
+	            if(rows.length < 1){
+	            	return res.send("User Not found")
+	            } else {
+
+			        user_id = rows[0].user_id;
+
+			        var query = conn.query("UPDATE contents set ? WHERE content_id = ? ",[data,content_id], function(err, rows){
+
+			           if(err){
+			                console.log(err);
+			                return next("Mysql error, check your query");
+			           }
+
+			          // res.sendStatus(200);
+
+			          var query = conn.query("SELECT * FROM contents WHERE content_id = ?",[content_id],function(err,rows){
+
+				            if(err){
+				                console.log(err);
+				                return next("Mysql error, check your query");
+				            }
+
+				            //if user not found
+				            if(rows.length < 1)
+				                return res.send("Contents Not found");
+
+				            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+				        });
+
+			        });
+
+	            }
+
+	         });
+
+
+	    });
+	 } else {
+		res.json({"Error" : true, "Message" : "Auth is required"});
+	}
 
 });
 

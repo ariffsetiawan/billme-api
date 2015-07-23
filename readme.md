@@ -38,3 +38,13 @@ import billme.sql
 		url : /chats/{friend_user_id}
 		header : authentification
 		params : text
+
+		type : PUT
+		url : /chats/{friend_user_id}/{chat_id}
+		header : authentification
+		params : action_status (0 = reject, 1 = accept)
+
+		type : GET
+		url : /chats/{friend_user_id}
+		header : authentification
+		params : -
