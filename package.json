@@ -13,6 +13,7 @@
     "forever": "^0.14.2",
     "moment": "^2.10.3",
     "mysql": "*",
+    "node-regexp": "^0.1.1",
     "shortid": "^2.2.2"
   }
 }

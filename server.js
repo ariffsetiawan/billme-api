@@ -6,8 +6,8 @@ var express  = require('express'),
 
 
 /*Set EJS template Engine*/
-// app.set('views','./views');
-// app.set('view engine','ejs');
+app.set('views','./views');
+app.set('view engine','ejs');
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true })); //support x-www-form-urlencoded

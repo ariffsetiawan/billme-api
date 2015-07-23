@@ -1,0 +1,51 @@
+<html>
+  <head>
+    <title><%=title%> - BillMe</title>
+    <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet"> 
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3">
+        <div class="page-header">
+          <center><h1><%=title%></h1></center>
+        </div>
+        <div>
+        <div class="panel">
+                        <!-- <div class="panel-heading">
+                            <i class="fa fa-bell fa-fw"></i> Notifications Panel
+                        </div> -->
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="list-group">
+                              <% if(data.length){ 
+                                  
+                                  for(var i = 0;i < data.length;i++) { %>
+                                <a href="#" class="list-group-item">
+                                    <i class="fa fa-comment fa-fw"></i> <b><%=data[i].user_firstname%> :</b> &nbsp; <%=data[i].content_value%>
+                                    <span class="pull-right text-muted small"><em><%=moment(data[i].content_date).fromNow()%></em>
+                                    </span>
+                                </a>
+
+                                <% }
+              
+                               }else{ %>
+                                   <a href="#" class="list-group-item">
+                                    No Data.
+                                </a>
+                              <% } %>
+              
+                                
+                            </div>
+                            <!-- /.list-group -->
+                            <!-- <a href="#" class="btn btn-default btn-block">View All Alerts</a> -->
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+          
+        </div>
+      </div>
+    </div>
+      
+  </body>
+</html>

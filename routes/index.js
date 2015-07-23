@@ -16,6 +16,38 @@ router.get('/about',function(req,res){
     res.send('<center><h3>About Page</h3></center>');
 });
 
+router.get('/p/:user_id/:friend_user_id', function(req, res, next) {
+	var user_id = req.params.user_id;
+	var friend_user_id = req.params.friend_user_id;
+
+	var chat_url_1 = user_id+"/"+friend_user_id;
+	var chat_url_2 = friend_user_id+"/"+user_id;
+
+
+	req.getConnection(function(err,conn){
+
+	        if (err) return next("Cannot Connect");
+
+	        var query = conn.query("SELECT * FROM contents LEFT JOIN chats ON contents.content_chat_id=chats.chat_id LEFT JOIN users ON contents.content_user_id=users.user_id WHERE (chat_url = "+chat_url_1+" OR chat_url="+chat_url_2+" ) ORDER BY content_id",function(err,rows){
+
+	            if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	            }
+
+	            if(rows.length < 1){
+	            	return res.send("User Not found")
+	            } else {
+
+			        res.render('share', {title : "Chat ", data : rows, moment: moment });
+
+	            }
+
+	         });
+
+	    });
+});
+
 /*RESTful API Router*/
 
 //all users
