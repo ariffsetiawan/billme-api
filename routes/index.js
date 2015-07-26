@@ -1,6 +1,8 @@
 var express = require('express');
 var moment = require('moment');
 var shortid = require('shortid');
+var Decimal = require('decimal');
+var regexp = require('node-regexp')
 var router = express.Router();
 
 /* GET home page. */
@@ -486,6 +488,38 @@ chat.post(function(req,res,next){
 
 			        user_id = rows[0].user_id;
 
+			        var query = conn.query("SELECT * FROM balances WHERE balance_user_id="+user_id+"",function(err,rows){
+
+			            if(err){
+			                console.log(err);
+			                return next("Mysql error, check your query");
+			            }
+
+			            //if user not found
+			            if(rows.length < 1){
+			                
+			                var balance_data = {
+							        balance_user_id:user_id,
+							        balance_value:0,
+							        balance_date:now,
+							        balance_min:0,
+							        balance_plus:0,
+							        
+							     };
+
+							     var query = conn.query("INSERT INTO balances set ? ",balance_data, function(err, rows){
+
+						           if(err){
+						                console.log(err);
+						                return next("Mysql error, check your query");
+						           }
+						        });
+
+			            }
+
+			            
+			        });
+
 				        var query = conn.query("SELECT * FROM chats WHERE (chat_user_1 = "+friend_user_id+" AND chat_user_2="+user_id+") OR (chat_user_1 = "+user_id+" AND chat_user_2="+friend_user_id+")",function(err,rows){
 
 				            if(err){
@@ -496,6 +530,8 @@ chat.post(function(req,res,next){
 				            //if chat not exist
 				            if(rows.length < 1){
 				                //return res.send("Contents Not found");
+
+
 				                //get data
 							    var chat_data = {
 							        chat_user_1:user_id,
@@ -526,7 +562,69 @@ chat.post(function(req,res,next){
 
 						            chat_id = rows[0].chat_id;
 
+						            var balance_user = 0;
+
+						            	var text = req.body.text;
+
+								        var string=text.substring(text.lastIndexOf("{")+1,text.lastIndexOf("}"));
+
+								        console.log('balance :'+balance_user);
+
+								        console.log('string : '+string);
+
+								        var re = regexp().start('-').toRegExp();
+
+								        var minus = re.test(string.toString());
+
+								        console.log('minus : ' +minus);
+
+								        if (minus==false) {
+
+								        	var new_balance = Decimal(balance_user).add(string).toNumber();
+
+
+									        var balance_data = {
+										        balance_user_id:user_id,
+										        balance_value:new_balance,
+										        balance_date:now,
+										        balance_min:0,
+										        balance_plus:string,
+										        
+										     };
+
+										     var query = conn.query("INSERT INTO balances set ? ",balance_data, function(err, rows){
+
+									           if(err){
+									                console.log(err);
+									                return next("Mysql error, check your query");
+									           }
+									        });
+
+								        } else if (minus==true) {
+
+								        	var new_balance = Decimal(balance_user).add(string).toNumber();
+
+								        	var balance_data = {
+										        balance_user_id:user_id,
+										        balance_value:new_balance,
+										        balance_date:now,
+										        balance_min:string,
+										        balance_plus:0,
+										        
+										     };
+
+										     var query = conn.query("INSERT INTO balances set ? ",balance_data, function(err, rows){
+
+									           if(err){
+									                console.log(err);
+									                return next("Mysql error, check your query");
+									           }
+									        });
+
+								        }
+
 						            //insert chat contents
+
 
 						            //get data
 								    var data = {
@@ -577,7 +675,7 @@ chat.post(function(req,res,next){
 										            if(rows.length < 1)
 										                return res.send("Contents Not found");
 
-										            res.json({ Error : false, Message : "Success", data : rows});
+										            res.json({ Error : false, Message : "Success", data : rows, Balance : new_balance});
 										        });
 
 									      
@@ -598,68 +696,156 @@ chat.post(function(req,res,next){
 
 				            } else {
 
-
+				            	//existing chats
 					            chat_id = rows[0].chat_id;
 
-					            //insert chat contents
+					            // get balance
 
-					            //get data
-							    var data = {
-							        content_chat_id:chat_id,
-							        content_user_id:user_id,
-							        content_value:req.body.text,
-							        content_date:now,
-							        content_status:1,
-							        
-							     };
+					            var query = conn.query("SELECT balance_value FROM balances WHERE balance_user_id = ? ORDER BY balance_id DESC LIMIT 0,1",[user_id],function(err,rows){
 
-							     var chat_update_data = {
-								     	chat_last_content:req.body.text,
-								     	chat_updated_date:now
-								 }
+						            if(err){
+						                console.log(err);
+						                return next("Mysql error, check your query");
+						            }
 
-							    //inserting into mysql
-							    req.getConnection(function (err, conn){
+						            //if user not found
+						            if(rows.length < 1){
+						                return res.send("Contents Not found");
+						            } else {
+						            	var balance_user = rows[0].balance_value;
 
-							        if (err) return next("Cannot Connect");
+						            	var text = req.body.text;
 
-							        var query = conn.query("INSERT INTO contents set ? ",data, function(err, rows){
+								        var string=text.substring(text.lastIndexOf("{")+1,text.lastIndexOf("}"));
 
-							           if(err){
-							                console.log(err);
-							                return next("Mysql error, check your query");
-							           }
+								        console.log('balance :'+balance_user);
 
-							          //res.sendStatus(200);
+								        console.log('string : '+string);
 
-							          var query = conn.query("UPDATE chats set ? WHERE chat_id = ? ",[chat_update_data,chat_id], function(err, rows){
+								        var re = regexp().start('-').toRegExp();
+
+								        var minus = re.test(string.toString());
+
+								        console.log('minus : ' +minus);
+
+								        if (minus==false) {
+
+								        	var new_balance = Decimal(balance_user).add(string).toNumber();
+
+
+									        var balance_data = {
+										        balance_user_id:user_id,
+										        balance_value:new_balance,
+										        balance_date:now,
+										        balance_min:0,
+										        balance_plus:string,
+										        
+										     };
+
+										     var query = conn.query("INSERT INTO balances set ? ",balance_data, function(err, rows){
 
 									           if(err){
 									                console.log(err);
 									                return next("Mysql error, check your query");
 									           }
-
-									          // res.sendStatus(200);
-
-									          var query = conn.query("SELECT * FROM chats WHERE chat_id = ?",[chat_id],function(err,rows){
-
-										            if(err){
-										                console.log(err);
-										                return next("Mysql error, check your query");
-										            }
-
-										            //if user not found
-										            if(rows.length < 1)
-										                return res.send("Contents Not found");
-
-										            res.json({ Error : false, Message : "Success", data : rows});
-										        });
-
 									        });
 
-							        });
+								        } else if (minus==true) {
 
-							     });
+								        	var new_balance = Decimal(balance_user).add(string).toNumber();
+
+								        	var balance_data = {
+										        balance_user_id:user_id,
+										        balance_value:new_balance,
+										        balance_date:now,
+										        balance_min:string,
+										        balance_plus:0,
+										        
+										     };
+
+										     var query = conn.query("INSERT INTO balances set ? ",balance_data, function(err, rows){
+
+									           if(err){
+									                console.log(err);
+									                return next("Mysql error, check your query");
+									           }
+									        });
+
+								        }
+
+								        //insert chat contents
+							            //get data
+									    var data = {
+									        content_chat_id:chat_id,
+									        content_user_id:user_id,
+									        content_value:req.body.text,
+									        content_date:now,
+									        content_status:1,
+									        
+									     };
+
+									     var chat_update_data = {
+										     	chat_last_content:req.body.text,
+										     	chat_updated_date:now
+										 }
+
+
+										    //inserting into mysql
+										    req.getConnection(function (err, conn){
+
+										        if (err) return next("Cannot Connect");
+
+										        var query = conn.query("INSERT INTO contents set ? ",data, function(err, rows){
+
+										           if(err){
+										                console.log(err);
+										                return next("Mysql error, check your query");
+										           }
+
+										          //res.sendStatus(200);
+
+										          var query = conn.query("UPDATE chats set ? WHERE chat_id = ? ",[chat_update_data,chat_id], function(err, rows){
+
+												           if(err){
+												                console.log(err);
+												                return next("Mysql error, check your query");
+												           }
+
+												          // res.sendStatus(200);
+
+												          var query = conn.query("SELECT * FROM chats WHERE chat_id = ?",[chat_id],function(err,rows){
+
+													            if(err){
+													                console.log(err);
+													                return next("Mysql error, check your query");
+													            }
+
+													            //if user not found
+													            if(rows.length < 1)
+													                return res.send("Contents Not found");
+
+													            res.json({ Error : false, Message : "Success", data : rows, Balance : new_balance});
+													        });
+
+												        });
+
+										        });
+
+										     });
+
+
+
+
+						            }
+
+						         
+						        });
+
+							            
+
+						        
+
+											
 
 				            }
 
