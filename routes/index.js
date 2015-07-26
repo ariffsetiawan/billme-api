@@ -75,7 +75,7 @@ var users = router.route('/users');
 users.get(function(req,res,next){
 
 
-	console.log(req.headers.authentification);
+	//console.log(req.headers.authentification);
 
 	var auth = req.headers.authentification;
 
@@ -96,7 +96,7 @@ users.get(function(req,res,next){
 	            	return res.send("User Not found")
 	            } else {
 
-			        res.json({"Error" : false, "Message" : "Success", "User" : rows});
+			        res.json({ Error : false, Message : "Success", data : rows});
 
 	            }
 
@@ -104,56 +104,8 @@ users.get(function(req,res,next){
 
 	    });
 	} else {
-		res.json({"Error" : true, "Message" : "Auth is required"});
+		res.json({ Error : true, Message : "Auth is required"});
 	}
-
-});
-
-//post data to DB | POST
-users.post(function(req,res,next){
-
-	var now = moment.utc().format('YYYY-MM-DD HH:mm:ss');
-
-    //validation
-    req.assert('first_name','First Name is required').notEmpty();
-    req.assert('last_name','Last Name is required').notEmpty();
-    req.assert('facebook_id','Facebook ID is required').notEmpty();
-    req.assert('email','A valid email is required').isEmail();
-
-    var errors = req.validationErrors();
-    if(errors){
-        res.status(422).json(errors);
-        return;
-    }
-
-    //get data
-    var data = {
-        user_firstname:req.body.first_name,
-        user_lastname:req.body.last_name,
-        user_fbid:req.body.facebook_id,
-        user_created_date:now,
-        user_updated_date:now,
-        user_email:req.body.email,
-        // password:req.body.password
-     };
-
-    //inserting into mysql
-    req.getConnection(function (err, conn){
-
-        if (err) return next("Cannot Connect");
-
-        var query = conn.query("INSERT INTO users set ? ",data, function(err, rows){
-
-           if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-           }
-
-          res.sendStatus(200);
-
-        });
-
-     });
 
 });
 
@@ -186,9 +138,7 @@ user.get(function(req,res,next){
             if(rows.length < 1)
                 return res.send("User Not found");
 
-            // res.render('edit',{title:"Edit user",data:rows});
-
-            res.json({"Error" : false, "Message" : "Success", "Users" : rows});
+            res.json({ Error : false, Message : "Success", data : rows});
         });
 
     });
@@ -332,7 +282,7 @@ facebookLogin.post(function(req,res,next){
 			            	if(rows.length < 1)
 			                	return res.send("User Not found");
 
-				            res.json({"Error" : false, "Message" : "Success", "User" : rows});
+				            res.json({ Error : false, Message : "Success", data : rows});
 
 				         });
 			           }   
@@ -341,7 +291,7 @@ facebookLogin.post(function(req,res,next){
 
 			     	
 			} else {
-				res.json({"Error" : true, "Message" : "User already exist", "User" : rows});
+				res.json({ Error : true, Message : "User already exist", data : rows});
 			}
 
 		});
@@ -415,7 +365,7 @@ chats.get(function(req,res,next){
 			                return next("Mysql error, check your query");
 			            }
 
-			            res.json({"Error" : false, "Message" : "Success", "Chats" : rows});
+			            res.json({ Error : false, Message : "Success", data : rows});
 
 
 			         });
@@ -426,7 +376,7 @@ chats.get(function(req,res,next){
 
 	    });
 	} else {
-		res.json({"Error" : true, "Message" : "Auth is required"});
+		res.json({ Error : true, Message : "Auth is required"});
 	}
 
 });
@@ -477,9 +427,7 @@ chat.get(function(req,res,next){
 			            if(rows.length < 1)
 			                return res.send("Contents Not found");
 
-			            // res.render('edit',{title:"Edit user",data:rows});
-
-			            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+			            res.json({ Error : false, Message : "Success", data : rows});
 			        });
      
 
@@ -490,7 +438,7 @@ chat.get(function(req,res,next){
 	    });
 	
 	} else {
-		res.json({"Error" : true, "Message" : "Auth is required"});
+		res.json({ Error : true, Message : "Auth is required" });
 	}
 
 });
@@ -628,7 +576,7 @@ chat.post(function(req,res,next){
 										            if(rows.length < 1)
 										                return res.send("Contents Not found");
 
-										            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+										            res.json({ Error : false, Message : "Success", data : rows});
 										        });
 
 									      
@@ -703,7 +651,7 @@ chat.post(function(req,res,next){
 										            if(rows.length < 1)
 										                return res.send("Contents Not found");
 
-										            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+										            res.json({ Error : false, Message : "Success", data : rows});
 										        });
 
 									        });
@@ -727,7 +675,7 @@ chat.post(function(req,res,next){
 
 	    });
 	 }  else {
-		res.json({"Error" : true, "Message" : "Auth is required"});
+		res.json({ Error : true, Message : "Auth is required"});
 	}
     
 
@@ -798,7 +746,7 @@ chatcontent.put(function(req,res,next){
 				            if(rows.length < 1)
 				                return res.send("Contents Not found");
 
-				            res.json({"Error" : false, "Message" : "Success", "Contents" : rows});
+				            res.json({ Error : false, Message : "Success", data : rows});
 				        });
 
 			        });
@@ -810,7 +758,7 @@ chatcontent.put(function(req,res,next){
 
 	    });
 	 } else {
-		res.json({"Error" : true, "Message" : "Auth is required"});
+		res.json({ Error : true, Message : "Auth is required"});
 	}
 
 });
@@ -846,7 +794,7 @@ balances.get(function(req,res,next){
 
             // res.render('edit',{title:"Edit user",data:rows});
 
-            res.json({"Error" : false, "Message" : "Success", "Balances" : rows});
+            res.json({ Error : false, Message : "Success", data : rows});
         });
 
     });
@@ -882,7 +830,7 @@ balanceshare.get(function(req,res,next){
 
             // res.render('edit',{title:"Edit user",data:rows});
 
-            res.json({"Error" : false, "Message" : "Success", "Balances" : rows});
+            res.json({ Error : false, Message : "Success", data : rows});
         });
 
     });
