@@ -968,7 +968,7 @@ balances.get(function(req,res,next){
 
         if (err) return next("Cannot Connect");
 
-        var query = conn.query("SELECT * FROM balances LEFT JOIN users ON balances.balance_user_id=users.user_id WHERE chat_user_1 = ? ORDER BY balance_id DESC",[user_id],function(err,rows){
+        var query = conn.query("SELECT balances.balance_value, users.user_firstname, users.user_lastname FROM balances LEFT JOIN users ON balances.balance_user_id=users.user_id WHERE balance_user_id = ? ORDER BY balance_id DESC LIMIT 0,1",[user_id],function(err,rows){
 
             if(err){
                 console.log(err);
@@ -979,8 +979,6 @@ balances.get(function(req,res,next){
             if(rows.length < 1)
                 return res.send("Contents Not found");
 
-            // res.render('edit',{title:"Edit user",data:rows});
-
             res.json({ Error : false, Message : "Success", data : rows});
         });
 
@@ -988,7 +986,7 @@ balances.get(function(req,res,next){
 
 });
 
-var balanceshare = router.route('/balances/share');
+var balanceshare = router.route('/balances/share/:user_id');
 
 // users.all(function(req,res,next){
 //     console.log("You need to smth about Route ? Do it here");
@@ -998,13 +996,13 @@ var balanceshare = router.route('/balances/share');
 
 balanceshare.get(function(req,res,next){
 
-    var user_id = req.body.user_id;
+    var user_id = req.params.user_id;
 
     req.getConnection(function(err,conn){
 
         if (err) return next("Cannot Connect");
 
-        var query = conn.query("SELECT * FROM balances LEFT JOIN users ON balances.balance_user_id=users.user_id WHERE chat_user_1 = ? ",[user_id],function(err,rows){
+        var query = conn.query("SELECT U.user_id,U.user_firstname,U.user_lastname, C.chat_url FROM users U,chats C WHERE CASE WHEN C.chat_user_1 = "+user_id+" THEN C.chat_user_2 = U.user_id WHEN C.chat_user_2 = "+user_id+" THEN C.chat_user_1= U.user_id END AND (C.chat_user_1 = "+user_id+" OR C.chat_user_2 = "+user_id+") ORDER BY C.chat_updated_date DESC",function(err,rows){
 
             if(err){
                 console.log(err);
