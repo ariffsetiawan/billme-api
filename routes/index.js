@@ -11,7 +11,8 @@ var router = express.Router();
 // });
 
 router.get('/',function(req,res){
-    res.send('<center><h3>Welcome to BillMe API</h3></center>');
+    // res.send('<center><h3>Welcome to BillMe API</h3></center>');
+      res.render('index', { title: 'BillMe' });
 });
 
 router.get('/about',function(req,res){
