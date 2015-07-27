@@ -30,7 +30,7 @@ router.get('/p/:user_id/:friend_user_id', function(req, res, next) {
 
 	        if (err) return next("Cannot Connect");
 
-	        var query = conn.query("SELECT * FROM contents LEFT JOIN chats ON contents.content_chat_id=chats.chat_id LEFT JOIN users ON contents.content_user_id=users.user_id WHERE (chat_url = "+chat_url_1+" OR chat_url="+chat_url_2+" ) ORDER BY content_id",function(err,rows){
+	        var query = conn.query("SELECT * FROM contents LEFT JOIN chats ON contents.content_chat_id=chats.chat_id LEFT JOIN users ON contents.content_user_id=users.user_id WHERE (chat_url = '"+chat_url_1+"' OR chat_url='"+chat_url_2+"' ) ORDER BY content_id",function(err,rows){
 
 	            if(err){
 	                console.log(err);
