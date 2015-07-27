@@ -869,15 +869,17 @@ chat.post(function(req,res,next){
 
 });
 
-var chatcontent = router.route('/chats/:friend_user_id/:chat_id');
+var chatcontent = router.route('/chats/:friend_user_id/:content_id');
 //update chat content
 chatcontent.put(function(req,res,next){
     var friend_user_id = req.params.friend_user_id;
-    var content_id = req.params.chat_id;
+    var content_id = req.params.content_id;
+
+    var now = moment.utc().format('YYYY-MM-DD HH:mm:ss');
 
     //validation
     req.assert('friend_user_id','friend ID is required').notEmpty();
-    req.assert('chat_id','chat ID is required').notEmpty();
+    req.assert('content_id','content ID is required').notEmpty();
     
 
     var errors = req.validationErrors();
@@ -933,7 +935,103 @@ chatcontent.put(function(req,res,next){
 				            if(rows.length < 1)
 				                return res.send("Contents Not found");
 
-				            res.json({ Error : false, Message : "Success", data : rows});
+				            if (req.body.action_status==0) {
+
+				            	var user_id_balance = rows[0].content_user_id;
+				            	var text = rows[0].content_value;
+
+				            	//update balance
+
+				            	// get balance
+
+					            var query = conn.query("SELECT balance_value FROM balances WHERE balance_user_id = ? ORDER BY balance_id DESC LIMIT 0,1",[user_id_balance],function(err,rows){
+
+						            if(err){
+						                console.log(err);
+						                return next("Mysql error, check your query");
+						            }
+
+						            //if user not found
+						            if(rows.length < 1){
+						                return res.send("Contents Not found");
+						            } else {
+						            	var balance_user = rows[0].balance_value;
+
+						            	// var text = req.body.text;
+
+								        var string=text.substring(text.lastIndexOf("{")+1,text.lastIndexOf("}"));
+
+								        console.log('balance :'+balance_user);
+
+								        console.log('string : '+string);
+
+								        var re = regexp().start('-').toRegExp();
+
+								        var minus = re.test(string.toString());
+
+								        console.log('minus : ' +minus);
+
+								        if (minus==false) {
+
+								        	var new_balance = Decimal(balance_user).sub(string).toNumber();
+
+
+									        var balance_data = {
+										        balance_user_id:user_id_balance,
+										        balance_value:new_balance,
+										        balance_date:now,
+										        balance_min:string,
+										        balance_plus:0,
+										        
+										     };
+
+										     var query = conn.query("INSERT INTO balances set ? ",balance_data, function(err, rows){
+
+									           if(err){
+									                console.log(err);
+									                return next("Mysql error, check your query 1");
+									           }
+
+									           res.json({ Error : false, Message : "Success"});
+									        });
+
+								        } else if (minus==true) {
+
+								        	var new_balance = Decimal(balance_user).sub(string).toNumber();
+								        	// var new_balance = balance_user - string;
+
+								        	var balance_data = {
+										        balance_user_id:user_id_balance,
+										        balance_value:new_balance,
+										        balance_date:now,
+										        balance_min:0,
+										        balance_plus:string,
+										        
+										     };
+
+										     console.log(balance_data);
+
+										     var query = conn.query("INSERT INTO balances set ? ",balance_data, function(err, rows){
+
+									           if(err){
+									                console.log(err);
+									                return next("Mysql error, check your query 2");
+									           }
+
+									           res.json({ Error : false, Message : "Success"});
+									        });
+
+								        }
+
+								    }
+								});
+
+			          	
+			          		} else{
+			          			res.json({ Error : false, Message : "Success", data : rows});
+			          		}
+
+				            
 				        });
 
 			        });
