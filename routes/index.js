@@ -76,11 +76,7 @@ var users = router.route('/users');
 
 users.get(function(req,res,next){
 
-
-	//console.log(req.headers.authentification);
-
 	var auth = req.headers.authentification;
-
 
 	if (auth != "" && auth != undefined) {
 		req.getConnection(function(err,conn){
@@ -151,10 +147,10 @@ user.get(function(req,res,next){
 user.put(function(req,res,next){
     var user_id = req.params.user_id;
 
+    var auth = req.headers.authentification;
+
     //validation
-    req.assert('name','Name is required').notEmpty();
-    req.assert('email','A valid email is required').isEmail();
-    // req.assert('password','Enter a password 6 - 20').len(6,20);
+    req.assert('user_id','User ID is required').notEmpty();
 
     var errors = req.validationErrors();
     if(errors){
@@ -164,28 +160,44 @@ user.put(function(req,res,next){
 
     //get data
     var data = {
-        name:req.body.name,
-        email:req.body.email,
-        // password:req.body.password
+        user_image:req.body.ava_url,
      };
 
     //inserting into mysql
-    req.getConnection(function (err, conn){
+    if (auth != "" && auth != undefined) {
+	    req.getConnection(function (err, conn){
 
-        if (err) return next("Cannot Connect");
+	        if (err) return next("Cannot Connect");
 
-        var query = conn.query("UPDATE t_user set ? WHERE user_id = ? ",[data,user_id], function(err, rows){
+	        var query = conn.query("UPDATE users set ? WHERE user_id = ? ",[data,user_id], function(err, rows){
 
-           if(err){
-                console.log(err);
-                return next("Mysql error, check your query");
-           }
+	           if(err){
+	                console.log(err);
+	                return next("Mysql error, check your query");
+	           }
 
-          res.sendStatus(200);
+	          // res.sendStatus(200);
 
-        });
+	          	var query = conn.query("SELECT user_id, user_firstname, user_lastname, user_image as ava_url FROM users WHERE user_id = ? ",[user_id],function(err,rows){
 
-     });
+		            if(err){
+		                console.log(err);
+		                return next("Mysql error, check your query");
+		            }
+
+		            //if user not found
+		            if(rows.length < 1)
+		                return res.send("User Not found");
+
+		            res.json({ Error : false, Message : "Success", data : rows});
+		        });
+
+	        });
+
+	     });
+	} else {
+		res.json({ Error : true, Message : "Auth is required"});
+	}
 
 });
 
@@ -235,6 +247,12 @@ facebookLogin.post(function(req,res,next){
     var access_token = shortid.generate();
     var facebook_id = req.body.facebook_id;
 
+    var ava_url = req.body.ava_url;
+
+    if (ava_url=="" || ava_url==null) {
+    	ava_url = "http://billme.elasticbeanstalk.com/images/avatar.png";
+    };
+
     //get data
     var data = {
         user_firstname:req.body.first_name,
@@ -244,6 +262,7 @@ facebookLogin.post(function(req,res,next){
         user_updated_date:now,
         user_last_update:now,
         user_email:req.body.email,
+        user_image:ava_url,
         user_access_token:access_token,
      };
 

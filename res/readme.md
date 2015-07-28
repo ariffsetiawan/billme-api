@@ -22,11 +22,16 @@ import billme.sql
 		header : authentification
 		params : -
 
+		type : PUT
+		url : /users/:user_id
+		header : authentification
+		params : ava_url
+
 	Login
 		type : POST
 		url : /login/facebook
 		header : -
-		params : facebook_id, first_name, last_name, email
+		params : facebook_id, first_name, last_name, email, ava_url
 
 	Chat
 		type : GET
