@@ -361,7 +361,7 @@ chats.get(function(req,res,next){
 	            	user_id = rows[0].user_id;
 
 			        // var query = conn.query("SELECT * FROM chats WHERE (chat_user_1 = "+user_id+" OR chat_user_2="+user_id+" ) ORDER BY chat_updated_date DESC",function(err,rows){
-					var query = conn.query("SELECT C.*,U.user_id,U.user_firstname,U.user_lastname, U.user_image as ava_url FROM users U,chats C WHERE CASE WHEN C.chat_user_1 = "+user_id+" THEN C.chat_user_2 = U.user_id WHEN C.chat_user_2 = "+user_id+" THEN C.chat_user_1= U.user_id END AND (C.chat_user_1 = "+user_id+" OR C.chat_user_2 = "+user_id+") ORDER BY C.chat_updated_date DESC",function(err,rows){
+					var query = conn.query("SELECT C.*,U.user_id,U.user_firstname,U.user_lastname, U.user_image as ava_url,(select balance_value from balances where balance_user_id=user_id order by balance_id DESC LIMIT 0,1) as balance FROM users U,chats C WHERE CASE WHEN C.chat_user_1 = "+user_id+" THEN C.chat_user_2 = U.user_id WHEN C.chat_user_2 = "+user_id+" THEN C.chat_user_1= U.user_id END AND (C.chat_user_1 = "+user_id+" OR C.chat_user_2 = "+user_id+") ORDER BY C.chat_updated_date DESC",function(err,rows){
 
 			            if(err){
 			                console.log(err);
