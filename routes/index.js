@@ -224,7 +224,7 @@ facebookLogin.post(function(req,res,next){
     req.assert('first_name','First Name is required').notEmpty();
     req.assert('last_name','Last Name is required').notEmpty();
     req.assert('facebook_id','Facebook ID is required').notEmpty();
-    req.assert('email','A valid email is required').isEmail();
+    // req.assert('email','A valid email is required').isEmail();
 
     var errors = req.validationErrors();
     if(errors){
@@ -252,7 +252,7 @@ facebookLogin.post(function(req,res,next){
 		if (err) return next("Cannot Connect");
 
 
-    	var query = conn.query('SELECT user_fbid FROM users WHERE user_fbid = ?',[facebook_id],function(err,rows){
+    	var query = conn.query("SELECT user_fbid FROM users WHERE user_fbid = '"+facebook_id+"' ",function(err,rows){
 
 		    if(err){
 		        console.log(err);
